@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests\UserRquest;
+use Illuminate\Support\Facades\Session;
 use App\User;
 use App\Role;
 use App\Photo;
@@ -74,7 +75,10 @@ class AdminUsersController extends Controller
      */
     public function edit($id)
     {
-        return view('admin.users.edite');
+        $user = User::find($id);
+        $roles = Role::pluck('name','id')->all();
+        return view('admin.users.edit',compact('user','roles'));
+
     }
 
     /**
@@ -84,9 +88,19 @@ class AdminUsersController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(UserRquest $request, $id)
     {
-        //
+        $user = User::find($id);
+        $input = $request->all();
+        if ($file = $request->file('photo_id')) {
+              $name = time() . $file->getClientOriginalName();
+              $file->move('images', $name);
+              $photo = Photo::create(['file'=>$name]);
+              $input['photo_id'] = $photo->id;
+        }
+        $input['password'] = bcrypt($request->password);
+        $user->update($input);
+        return redirect('/admin/users');
     }
 
     /**
@@ -97,6 +111,10 @@ class AdminUsersController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $user = User::find($id);
+        unlink(public_path() . $user->photos->file);
+        $user->delete();
+        Session::flash('deleted_user','the users has been deleted');
+        return redirect('/admin/users');
     }
 }
