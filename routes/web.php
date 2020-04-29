@@ -24,6 +24,7 @@ Route::group(['middleware'=>'Admin'],function()
   Route::get('/admin', function () {
       return view('admin.index');
   });
+  Route::resource('/admin/posts','AdminPostsController');
 });
 Auth::routes();
 
